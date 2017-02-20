@@ -1,7 +1,10 @@
 ;;;; Lob.com Letters API
 (ns lob-clj.letters
-  (:require [lob-clj.models :refer [->Address ->Letter]])
+  (:require [lob-clj.models :refer [->Address ->Letter]]
+            [clojure.walk :refer [stringify-keys]]
+            [clj-time.format :as f])
   (:import [com.lob.id ZipCode]
+           [com.lob.client LobClient]
            [com.lob.protocol.request AddressRequest, LetterRequest]
            [com.lob.protocol.response LetterResponse]
            [lob_clj.models Address, Letter]))
@@ -26,8 +29,10 @@
          (into {}))))
 
 (defn- make-letter [^LetterResponse resp]
-  (let [id (.getId resp)
-        expected-delivery-date (.getExpectedDeliveryDate resp)
+  (let [id (.. resp getId value)
+        built-in-formatter (f/formatters :basic-date-time)
+        expected-delivery-date (->> (.getExpectedDeliveryDate resp)
+                                    (f/unparse built-in-formatter))
         url (.getUrl resp)
         carrier (.getCarrier resp)
         thumbnails (->> (.getThumbnails resp)
@@ -47,7 +52,7 @@
                        (to to-req)
                        (file html-or-pdf)
                        (color false)
-                       (data content)
+                       (data (stringify-keys content))
                        build)]
     (-> (.. client (createLetter letter-req) get)
         make-letter)))
