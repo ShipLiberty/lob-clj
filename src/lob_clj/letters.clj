@@ -52,6 +52,7 @@
                        (to to-req)
                        (file html-or-pdf)
                        (color false)
+                       (doubleSided true)
                        (data (stringify-keys content))
                        build)]
     (-> (.. client (createLetter letter-req) get)
